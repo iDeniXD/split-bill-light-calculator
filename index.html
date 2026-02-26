@@ -43,7 +43,7 @@
                         <input class="form-control" type="number" v-model.number="product.price" placeholder="Price" @change="recalc">
                     </td>
                     <td v-for="(person, index) of persons" :key="person.id">
-                        <input type="checkbox" @click="had(person, product, $event.target.checked); recalc()">
+                        <input type="checkbox" v-model="person['cb'+product.id]" @click="had(person, product, $event.target.checked); recalc()">
                     </td>
                     <td>
                         <button class="btn btn-sm btn-outline-secondary" @click="products.splice(index, 1); recalc()">
@@ -127,6 +127,7 @@
                         this.persons = d.persons ?? this.persons;
                         this.products = d.products ?? this.products;
                         this.id = d.id ?? this.id;
+                        this.recalc();
                     },
                 }
             },
