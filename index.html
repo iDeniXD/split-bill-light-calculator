@@ -70,7 +70,7 @@
                 </tr>
             </tbody>
         </table>
-        <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${url}`">
+        <img v-if="url" :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${url}`">
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -80,11 +80,14 @@
         Vue.createApp({
             data() {
                 return {
-                    url: location.href,
+                    url: null,
                     persons: [{id: 1}, {id: 2}, {id: 3}],
                     products: [{id: 4}, {id: 5}, {id: 6}],
                     id: 7,
                 }
+            },
+            mounted() {
+                this.d = new URLSearchParams(window.location.search).get('d');
             },
             methods: {
                 had(person, product, had) {
@@ -112,6 +115,35 @@
                             person.owns = this.products.filter(product => person.had?.[product.id] ?? false).reduce((owns, product) => owns + (product.price ?? 0) / (product.hadBy ?? 1), 0);
                         }
                     });
+                }
+            },
+            computed: {
+                d: {
+                    get() {
+                        return JSON.stringify({persons: this.persons, products: this.products, id: this.id})
+                    },
+                    set(d) {
+                        d = JSON.parse(d);
+                        this.persons = d.persons ?? this.persons;
+                        this.products = d.products ?? this.products;
+                        this.id = d.id ?? this.id;
+                    },
+                }
+            },
+            watch: {
+                d: {
+                    handler(d) {
+                        const genUrl = () => {
+                            this.url = window.location.href.split('?')[0] + '?d=' + d;
+                        };
+                        if (this.debounce == null) {
+                            this.debounce = 'next-time';
+                            genUrl();
+                        } else {
+                            clearTimeout(this.debounce);
+                            this.debounce = setTimeout(genUrl, 5000)
+                        }
+                    },
                 }
             }
         }).mount('#app')
