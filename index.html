@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calc</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <div id="app">
+        <table class="table table-responsive table-bordered">
+            <thead>
+                <tr>
+                    <th colspan="2"></th>
+                    <th v-for="person of persons">
+                        <input class="form-control" v-model="person.name" placeholder="Name">
+                    </th>
+                    <th>
+                        <button class="btn btn-sm btn-outline-secondary" @click="persons.push({id: id++})">
+                            <i class="fa fa-plus"></i>
+                        </button>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(product, index) of products" :key="product.id">
+                    <td>
+                        <input class="form-control" v-model="product.name" placeholder="Product">
+                    </td>
+                    <td>
+                        <input class="form-control" type="number" v-model.number="product.price" placeholder="Price" @change="recalc">
+                    </td>
+                    <td v-for="(person, index) of persons" :key="person.id">
+                        <input type="checkbox" @click="had(person, product, $event.target.checked); recalc()">
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-secondary" @click="products.splice(index, 1); recalc()">
+                            <i class="fa fa-minus"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <button class="btn btn-sm btn-outline-secondary" @click="products.push({id: id++})">
+                            <i class="fa fa-plus"></i>
+                        </button>
+                    </td>
+                    <td v-for="(person, index) of persons" v-text="(person.owns ?? 0).toFixed(2)"></td>
+                    <td v-text="persons.reduce((s, p) => s+(p.owns ?? 0), 0).toFixed(2)"></td>
+                </tr>
+                <tr>
+                    <td colspan="2"></td>
+                    <td v-for="(person, index) of persons">
+                        <button class="btn btn-sm btn-outline-secondary" @click="removePerson(index)">
+                            <i class="fa fa-minus"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script>
+        Vue.createApp({
+            data() {
+                return {
+                    persons: [{id: 1}, {id: 2}, {id: 3}],
+                    products: [{id: 4}, {id: 5}, {id: 6}],
+                    id: 7,
+                }
+            },
+            methods: {
+                had(person, product, had) {
+                    product.hadBy ??= 0;
+                    person.had ??= {};
+                    if (had) {
+                        product.hadBy += 1;
+                        person.had[product.id] = true;
+                    } else {
+                        product.hadBy -= 1;
+                        person.had[product.id] = false;
+                    }
+                },
+                removePerson(index) {
+                    const person = this.persons.splice(index, 1)[0]; 
+                    for(const product of this.products) {
+                        product.hadBy ??= 0;
+                        product.hadBy -= person.had?.[product.id] ? 1 : 0;
+                    }
+                    this.recalc()
+                },
+                recalc() {
+                    Vue.nextTick(() => {
+                        for (const person of this.persons) {
+                            person.owns = this.products.filter(product => person.had?.[product.id] ?? false).reduce((owns, product) => owns + (product.price ?? 0) / (product.hadBy ?? 1), 0);
+                        }
+                    });
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
